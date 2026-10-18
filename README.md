@@ -31,9 +31,11 @@ cp .env.example .env
 | Variable | Descripción | Valor de ejemplo |
 |---|---|---|
 | `PORT` | Puerto en el que se ejecuta la API | `3000` |
-| `MONGO_URI` | Cadena de conexión a MongoDB | `mongodb://localhost:27017/registree` |
+| `MONGO_URI` | Cadena de conexión a MongoDB | `mongodb://registree_admin:cambiar_contrasena@localhost:27017/registree?authSource=admin` |
 | `JWT_SECRET` | Cadena secreta para tokens JWT | Cadena aleatoria (revisar nota) |
 | `JWT_EXPIRES_IN` | Tiempo de expiración del token | `1d` |
+| `MONGO_ROOT_USER` | Usuario de la bd para la cadena de conexión| `registree_admin` |
+| `MONGO_ROOT_PASSWORD` | Contraseña de la bd para la cadena de conexión | `cambiar_contrasena` |
 
 > **Nota:** para generar un `JWT_SECRET` propio se puede ejecutar:
 > ```bash
@@ -44,6 +46,11 @@ cp .env.example .env
 ```bash
 docker compose up -d
 ```
+> **Nota:** Si se modifica la contraseña de la bd después de levantar el contenedor, este se debe desmontar y volver a subir. Usar los siguientes comandos:
+> ```bash
+> docker compose down -v #tumba la bd y borra los datos
+> docker compose up -d #levanta la bd
+> ```
 
 * Para ejecución con dev, build y start, usar:
 ```bash
