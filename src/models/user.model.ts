@@ -1,0 +1,74 @@
+import { Schema, model } from "mongoose";
+
+/**Únicos roles permitidos para login y permisos */
+export enum UserRole {
+  ADMIN = "ADMIN",
+  USER = "USER",
+}
+
+/**Estructura de la colección de usuarios */
+export interface IUser {
+  email: string;
+  password: string;
+  name: string;
+  role: UserRole;
+  active: boolean;
+  creationAt?: Date;
+  updatedAt?: Date;
+}
+
+const userSchema = new Schema<IUser>(
+  {
+    email: {
+      type: String,
+      required: [true, "El email es obligatorio"],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      maxlength: [254, "El email puede tener máximo 254 caracteres"],
+      match: [
+        /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
+        "Por favor ingrese un correo válido",
+      ],
+    },
+    password: {
+      type: String,
+      required: [true, "La contraseña es obligatoria"],
+      select: false,
+    },
+    role: {
+      type: String,
+      enum: Object.values(UserRole),
+      default: UserRole.USER,
+      required: [true, "El rol es obligatorio"],
+    },
+    name: {
+      type: String,
+      required: [true, "El nombre es obligatorio"],
+      trim: true,
+      maxLength: [100, "El campo puede tener máximo 100 caracteres"],
+      match: [
+        /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+        "El campo solo admite letras y acentos",
+      ],
+    },
+    active: {
+      type: Boolean,
+      required: [true, "El estado es obligatorio"],
+      default: true,
+    },
+  },
+  {
+    timestamps: { createdAt: "creationAt", updatedAt: "updatedAt" },
+    versionKey: false,
+  },
+);
+
+userSchema.set("toJSON", {
+  transform: (_doc, ret) => {
+    const { password, ...rest } = ret; //Para no exponer la contraseña en la respuesta
+    return rest;
+  },
+});
+
+export const User = model<IUser>("User", userSchema);
