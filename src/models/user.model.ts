@@ -1,12 +1,16 @@
 import { Schema, model } from "mongoose";
 import bcrypt from 'bcrypt';
 import { env } from '../config/env'
+import { normalizeText } from '../utils/text'
 
 /**Únicos roles permitidos para login y permisos */
 export enum UserRole {
   ADMIN = "ADMIN",
   USER = "USER",
 }
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const NAME_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
 
 /**Estructura de la colección de usuarios */
 export interface IUser {
@@ -26,12 +30,9 @@ const userSchema = new Schema<IUser>(
       required: [true, "El email es obligatorio"],
       unique: true,
       lowercase: true,
-      trim: true,
+      set: normalizeText,
       maxlength: [254, "El email puede tener máximo 254 caracteres"],
-      match: [
-        /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
-        "Por favor ingrese un correo válido",
-      ],
+      match: [EMAIL_REGEX, "Por favor ingrese un correo válido",],
     },
     password: {
       type: String,
@@ -49,12 +50,9 @@ const userSchema = new Schema<IUser>(
     name: {
       type: String,
       required: [true, "El nombre es obligatorio"],
-      trim: true,
+      set: normalizeText,
       maxLength: [100, "El campo puede tener máximo 100 caracteres"],
-      match: [
-        /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-        "El campo solo admite letras y acentos",
-      ],
+      match: [NAME_REGEX, "El campo solo admite letras y acentos"],
     },
     active: {
       type: Boolean,
