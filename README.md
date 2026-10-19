@@ -129,6 +129,167 @@ Ejemplo de body para login:
 
 ---
 
+## Convenciones de las API
+
+* Todas las peticiones y respuestas usan **JSON**, incluidos los errores y las rutas inexistentes.
+* Las rutas protegidas requieren el header `Authorization: Bearer <token>` (ver [Autenticación](#autenticación)).
+* Los campos que el cliente no tiene permitido enviar (por ejemplo `_id`, `createdBy`, `creationAt`) se ignoran con ls lógica de Pick.
+* Las fechas de las respuestas están en UTC. Los filtros por fecha se reciben como `YYYY-MM-DD` y se interpretan en **hora Colombia (UTC-5)**.
+
+### Formato de los listados paginados
+
+Los listados usan `offset` y `limit`. 
+
+| Parámetro | Tipo | Por defecto | Reglas |
+|---|---|---|---|
+| `offset` | entero | `0` | Mayor o igual a 0 |
+| `limit` | entero | `10` | Entre 1 y 100 |
+
+```json
+{
+  "data": [],
+  "total": 25,
+  "offset": 0,
+  "limit": 10
+}
+```
+
+`total` es la cantidad de registros que cumplen los filtros (total_count)
+
+### Formato de los errores
+
+```json
+{ "message": "Producto no encontrado" }
+```
+
+Los errores de validación incluyen además la lista de todos los campos con problemas:
+
+```json
+{
+  "message": "Datos inválidos",
+  "errors": ["El precio debe ser mayor a 0", "El stock no puede ser número decimal"]
+}
+```
+
+| Código | Cuándo |
+|---|---|
+| `400` | Datos o parámetros inválidos, id con formato incorrecto o JSON mal formado |
+| `401` | Falta el token, es inválido o expiró |
+| `403` | El rol del usuario no tiene permiso para la acción |
+| `404` | El recurso o la ruta no existe |
+| `409` | Conflicto con un dato único (por ejemplo, email ya registrado) |
+| `500` | Error interno |
+
+---
+
+## Productos
+
+Base: `/api/products`.
+
+### Endpoints
+
+| Método | Endpoint | Descripción | Acceso | Respuesta exitosa |
+|---|---|---|---|---|
+| `GET` | `/api/products` | Lista productos activos con paginación, búsqueda y filtro por fechas | `ADMIN`, `USER` | `200` listado paginado |
+| `GET` | `/api/products/:id` | Detalle de un producto | `ADMIN`, `USER` | `200` producto |
+| `POST` | `/api/products` | Crea un producto | `ADMIN` | `201` producto creado |
+| `PATCH` | `/api/products/:id` | Actualiza los campos del producto | `ADMIN` | `200` producto actualizado |
+| `DELETE` | `/api/products/:id` | Elimina el producto (borrado lógico) | `ADMIN` | `200` mensaje y producto |
+
+### Filtros del listado
+
+Además de `offset` y `limit` (ver [Formato de los listados paginados](#formato-de-los-listados-paginados)):
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `search` | texto | Busca productos que el título **contenga** el texto, sin distinguir mayúsculas |
+| `from` | `YYYY-MM-DD` | Productos creados desde ese día (incluido), en hora Colombia |
+| `to` | `YYYY-MM-DD` | Productos creados hasta ese día (incluido), en hora Colombia |
+
+Ejemplo:
+
+```
+GET /api/products?search=mesa&from=2026-01-01&to=2026-01-31&offset=0&limit=10
+```
+
+* El listado siempre devuelve solo productos activos, ordenados del más reciente al más antiguo.
+* `from` no puede ser posterior a `to`.
+
+### Ejemplo de producto (respuesta)
+
+```json
+{
+  "_id": "6ad56226821742b5c7dda9ca",
+  "title": "Válvula",
+  "description": "Válvula de presión",
+  "price": 450000.5,
+  "category": "Piscinas",
+  "images": ["https://ejemplo.com/valvula.png"],
+  "stock": 12,
+  "active": true,
+  "createdBy": "6ad561fe89a9166ba824a426",
+  "updatedBy": "6ad561fe89a9166ba824a426",
+  "creationAt": "2026-10-19T15:30:00.000Z",
+  "updatedAt": "2026-10-19T15:30:00.000Z"
+}
+```
+
+### Crear un producto
+
+`POST /api/products`
+
+```json
+{
+  "title": "Válvula",
+  "description": "Válvula de presión",
+  "price": 450000.5,
+  "category": "Piscinas",
+  "stock": 12,
+  "images": ["https://ejemplo.com/valvula.png"]
+}
+```
+
+Campos permitidos: `title`, `description`, `price`, `category`, `stock` e `images`. El servidor registra `createdBy`, `updatedBy`, `active` y las fechas.
+
+### Actualizar un producto
+
+`PATCH /api/products/:id`: se envían solo los campos que cambian. Debe llegar al menos uno.
+
+```json
+{
+  "price": 420000,
+  "stock": 10
+}
+```
+
+Campos permitidos: los mismos de la creación, más `active` (para restaurar un producto eliminado).
+
+### Reglas de validación
+
+| Campo | Tipo | Obligatorio | Reglas |
+|---|---|---|---|
+| `title` | texto | Sí | 3 a 150 caracteres. Solo letras (con tildes y ñ), números, espacios y los signos `. , ( ) / & % ' + -` |
+| `description` | texto | Sí | Máximo 1000 caracteres |
+| `price` | número | Sí | Mayor a 0 y máximo 1.000.000. Se redondea a 2 decimales |
+| `category` | texto | Sí | Máximo 50 caracteres. Solo letras y espacios |
+| `stock` | número entero | Sí | Entre 0 y 1.000.000 |
+| `images` | lista de textos | No | Máximo 4 URLs, cada una debe empezar por `http://` o `https://` |
+| `active` | booleano | No | Solo en la actualización |
+
+### Eliminación
+
+* El producto no se elimina, solo se inactiva
+
+### Errores específicos
+
+| Código | Cuándo |
+|---|---|
+| `400` | Campos inválidos, body sin campos permitidos en la actualización, id con formato incorrecto, filtros inválidos (`limit`, fechas, `from` posterior a `to`) |
+| `403` | Un `USER` intenta crear, actualizar o eliminar |
+| `404` | El producto no existe (o está eliminado y lo consulta un `USER`) |
+
+---
+
 ## Stack tecnológico
 
 * **Runtime:** Node.js LTS (v24.16.0)
