@@ -5,6 +5,7 @@ import {env} from './config/env';
 import {connectDB} from './config/database';
 import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
+import userRoutes from './routes/user.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { notFound } from './middlewares/not-found.middleware';
 
@@ -14,6 +15,7 @@ app.use(cors({origin: env.corsOrigin}));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/users', userRoutes);
 
 app.get('/api/health', (_req, res) => {
     const dbConnected = mongoose.connection.readyState === 1;
