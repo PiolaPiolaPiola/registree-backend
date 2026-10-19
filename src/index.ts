@@ -5,6 +5,7 @@ import {env} from './config/env';
 import {connectDB} from './config/database';
 import authRoutes from './routes/auth.routes';
 import { errorHandler } from './middlewares/error.middleware';
+import { notFound } from './middlewares/not-found.middleware';
 
 const app = express();
 
@@ -17,7 +18,7 @@ app.get('/api/health', (_req, res) => {
     res.status(200).json({status: 'Ok', database_connected: dbConnected});
 });
 
-//Debe ir después de todas las rutas para recibir sus errores
+app.use(notFound);
 app.use(errorHandler);
 
 const startServer = async(): Promise<void> => {
