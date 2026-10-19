@@ -43,7 +43,10 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: Object.values(UserRole),
+      enum: {
+        values: Object.values(UserRole),
+        message: 'El rol debe ser ADMIN o USER',
+      },
       default: UserRole.USER,
       required: [true, "El rol es obligatorio"],
     },

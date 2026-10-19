@@ -1,16 +1,10 @@
-import { Types, isObjectIdOrHexString, HydratedDocument, QueryFilter  } from 'mongoose';
+import { Types, HydratedDocument, QueryFilter  } from 'mongoose';
 import { Product } from '../models/product.model';
 import { AppError } from '../utils/app-error';
 import type { CreateProductDTO, ProductFilters, UpdateProductDTO } from '../types/product.types';
+import { ensureValidId } from '../utils/object-id';
 import type { IProduct } from '../models/product.model';
 import type { PaginatedResult } from '../types/pagination';
-
-/**Para validar que el id tenga formato de ObjectId*/
-const ensureValidId = (id: string): void => {
-  if (!isObjectIdOrHexString(id)) {
-    throw new AppError(400, 'El id del producto no es válido');
-  }
-};
 
 /** Expresión regular para evitar que el servidor interprete texto como expresiones regulares*/
 const escapeRegex = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -53,7 +47,7 @@ export const listProducts = async (
  * @param includeInactive true solo para ADMIN. USER no puede ver productos inactivos.
  */
 export const getProductById = async (id: string, includeInactive = false) => {
-  ensureValidId(id);
+  ensureValidId(id, 'producto');
 
   const filter = includeInactive ? { _id: id } : { _id: id, active: true };
   const product = await Product.findOne(filter);
