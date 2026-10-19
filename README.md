@@ -133,7 +133,7 @@ Ejemplo de body para login:
 
 * Todas las peticiones y respuestas usan **JSON**, incluidos los errores y las rutas inexistentes.
 * Las rutas protegidas requieren el header `Authorization: Bearer <token>` (ver [Autenticación](#autenticación)).
-* Los campos que el cliente no tiene permitido enviar (por ejemplo `_id`, `createdBy`, `creationAt`) se ignoran con ls lógica de Pick.
+* Los campos que el cliente no tiene permitido enviar (por ejemplo `_id`, `createdBy`, `creationAt`) se ignoran con la lógica de pick.
 * Las fechas de las respuestas están en UTC. Los filtros por fecha se reciben como `YYYY-MM-DD` y se interpretan en **hora Colombia (UTC-5)**.
 
 ### Formato de los listados paginados
@@ -290,6 +290,117 @@ Campos permitidos: los mismos de la creación, más `active` (para restaurar un 
 
 ---
 
+## Usuarios
+
+Base: `/api/users`. Todas las rutas son solo para `ADMIN`.
+
+### Endpoints
+
+| Método | Endpoint | Descripción | Acceso | Respuesta exitosa |
+|---|---|---|---|---|
+| `GET` | `/api/users` | Lista usuarios con paginación y filtro por estado | `ADMIN` | `200` listado paginado |
+| `GET` | `/api/users/:id` | Detalle de un usuario | `ADMIN` | `200` usuario |
+| `POST` | `/api/users` | Crea un usuario con el rol indicado | `ADMIN` | `201` usuario creado |
+| `PATCH` | `/api/users/:id` | Actualiza los campos del usuario | `ADMIN` | `200` usuario actualizado |
+| `PATCH` | `/api/users/:id/status` | Inactiva o reactiva un usuario | `ADMIN` | `200` usuario actualizado |
+
+### Filtros del listado
+
+| Parámetro | Tipo | Por defecto | Descripción |
+|---|---|---|---|
+| `active` | `true` o `false` | `true` | Filtra los usuarios por estado |
+
+Ejemplo:
+
+```
+GET /api/users?active=false&offset=0&limit=10
+```
+
+* Por defecto solo se listan los usuarios activos. Con `active=false` se consultan los inactivos.
+* Los usuarios se ordenan del más reciente al más antiguo.
+
+### Ejemplo de usuario (respuesta)
+
+```json
+{
+  "_id": "6ad561fe89a9166ba824a427",
+  "name": "Stiven",
+  "email": "stiven@correo.com",
+  "role": "USER",
+  "active": true,
+  "creationAt": "2026-10-19T15:30:00.000Z",
+  "updatedAt": "2026-10-19T15:30:00.000Z"
+}
+```
+
+La contraseña nunca se incluye en las respuestas.
+
+### Crear un usuario
+
+`POST /api/users`
+
+```json
+{
+  "name": "Aleja",
+  "email": "aleja@correo.com",
+  "password": "Password123",
+  "role": "ADMIN"
+}
+```
+
+Campos permitidos: `name`, `email`, `password` y `role`. Si no se envía `role`, se asigna `USER`. A diferencia del registro público (Auth), aquí un `ADMIN` sí puede crear otros administradores.
+
+### Actualizar un usuario
+
+`PATCH /api/users/:id`: se envían solo los campos que cambian. Debe llegar al menos uno.
+
+```json
+{
+  "name": "Aleja",
+  "role": "USER"
+}
+```
+
+Campos permitidos: `name`, `email`, `password`, `role` y `active`.
+
+* Si se cambia la contraseña, se guarda hasheada.
+* Si se cambia el email, no puede pertenecer a otro usuario.
+
+### Reglas de validación
+
+| Campo | Tipo | Obligatorio | Reglas |
+|---|---|---|---|
+| `name` | texto | Sí | Máximo 100 caracteres. Solo letras (con tildes y ñ) y espacios |
+| `email` | texto | Sí | Formato de correo válido, máximo 254 caracteres. Único. Se guarda en minúsculas |
+| `password` | texto | Sí | Mínimo 8 caracteres |
+| `role` | texto | No | `ADMIN` o `USER`. Por defecto `USER` |
+| `active` | booleano | No | Solo en la actualización |
+
+### Inactivación
+
+* El usuario no se elimina, solo se inactiva.
+
+`PATCH /api/users/:id/status`
+
+```json
+{ "active": false }
+```
+
+* Un usuario inactivo no puede iniciar sesión, y su token deja de funcionar de inmediato.
+* Para reactivarlo se envía `{ "active": true }`.
+* Un `ADMIN` no puede inactivarse ni cambiar su propio rol, para no quedarse sin acceso.
+
+### Errores específicos
+
+| Código | Cuándo |
+|---|---|
+| `400` | Campos inválidos, body sin campos permitidos en la actualización, id con formato incorrecto, `active` inválido, o un `ADMIN` intenta inactivarse o cambiar su propio rol |
+| `403` | Un `USER` intenta acceder a cualquier ruta de usuarios |
+| `404` | El usuario no existe |
+| `409` | El email ya está registrado por otro usuario |
+
+---
+
 ## Stack tecnológico
 
 * **Runtime:** Node.js LTS (v24.16.0)
@@ -314,3 +425,22 @@ src/
 ├── types/        # Tipos globales de TypeScript 
 └── utils/        # Utilidades compartidas 
 ```
+
+## Decisiones de arquitectura (ADR)
+
+### ADR 01: Arquitectura por capas modular
+
+| | |
+|---|---|
+| **Contexto** | API REST mantenible y escalable, entregada en un plazo de 2 días. |
+| **Decisión** | Separar transporte (`routes`, `controllers`), lógica de negocio (`services`), persistencia (`models`) y aspectos transversales (`middlewares`). |
+| **Alternativas descartadas** | *Clean Architecture estricta*: demasiado código repetitivo (mappers, interfaces) para el plazo. *Todo en el controlador*: mucho acoplamiento y difícil de mantener. |
+| **Consecuencias** | Responsabilidades claras, código fácil de leer y escalable. Se debe mantener con las buenas prácticas  |
+
+### ADR 02: Roles con enum en lugar de colección
+
+| | |
+|---|---|
+| **Contexto** | Se requieren dos niveles de permisos: administradores y usuarios estándar. |
+| **Decisión** | Campo `role` de tipo texto validado con un `enum` de Mongoose (`ADMIN`, `USER`): garantiza la integridad sin sobreingeniería para un conjunto de roles fijo. |
+| **Evolución futura** | Si se necesitan permisos dinámicos por empresa o usuarios estándar con excepciones, se puede migrar a colecciones de `Roles` y `Permissions`. El cambio quedaría en el modelo y en el middleware `authorize`, sin tocar controladores ni services. |
