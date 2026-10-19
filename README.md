@@ -2,6 +2,8 @@
 
 API REST desarrollada con **Node.js**, **TypeScript**, **Express** y **MongoDB** para la gestión de inventario y dashboard gerencial de la plataforma *Registree*.
 
+* La API queda disponible en `http://localhost:3000/api`. Para verificar que está funcionando y conectada a la bd:
+  `GET http://localhost:3000/api/health` → `{ "status": "Ok", "database_connected": true }`
 ---
 
 ## Requisitos previos
@@ -48,7 +50,7 @@ npm install
 cp .env.example .env
 ```
 
-* Levantar bd con 
+* Levantar bd (con Docker Desktop abierto):
 ```bash
 docker compose up -d
 ```
@@ -63,7 +65,9 @@ docker compose up -d
 npm run seed
 ```
 
-* Para ejecución con dev, build y start, usar:
+> **Nota:** El mensaje final ‘La bd se encuentra desconectada’ es normal: el script cierra la conexión al terminar el run seed
+
+* Para ejecución con dev, build o start, usar uno de estos comandos:
 ```bash
 npm run dev #modo desarrollo
 npm run build #modo producción para compilar
@@ -118,7 +122,7 @@ Ejemplo de body para login:
 **Decisiones de seguridad:**
 * Las contraseñas se guardan hasheadas con bcrypt y nunca se devuelven en las respuestas.
 * El registro público siempre crea usuarios con rol `USER`; los `ADMIN` se crean con el seed.
-* El login responde el mismo error si el email no existe o la contraseña es incorrecta, para no revelar inormación de más.
+* El login responde el mismo error si el email no existe o la contraseña es incorrecta, para no revelar información de más.
 * Solo usuarios activos pueden ingresar.
 * CORS solo acepta peticiones desde la URL configurada en `CORS_ORIGIN`.
 
@@ -398,6 +402,31 @@ Campos permitidos: `name`, `email`, `password`, `role` y `active`.
 | `403` | Un `USER` intenta acceder a cualquier ruta de usuarios |
 | `404` | El usuario no existe |
 | `409` | El email ya está registrado por otro usuario |
+
+---
+
+## Pruebas con Postman
+
+La carpeta `postman/` contiene la colección y el entorno para probar la API.
+
+1. En Postman, clic en **Import** y seleccionar los dos archivos de la carpeta `postman/`.
+2. Seleccionar el entorno **Registree Local** (arriba a la derecha). Si se cambió el PORT en el .env, actualizar baseUrl en el entorno.
+3. Con la API corriendo (`npm run dev`) y los usuarios de prueba creados (`npm run seed`), ejecutar **Auth → Login ADMIN**. El token se guarda automáticamente en el entorno.
+4. Ejecutar el resto de los requests, o toda la colección con el **Collection Runner**.
+
+| Variable | Descripción |
+|---|---|
+| `baseUrl` | URL base de la API (`http://localhost:3000/api`) |
+| `token` | Token del `ADMIN`. Se llena con **Login ADMIN** |
+| `userToken` | Token del `USER`. Se llena con **Login USER** (se usa en las pruebas de permisos) |
+| `adminId` | Id del `ADMIN`. Se llena con **Login ADMIN** |
+| `productId` | Se llena al crear un producto |
+| `userId` | Se llena al crear un usuario |
+
+La colección está organizada en carpetas **Auth**, **Productos** y **Usuarios**, cada una con una subcarpeta **Errores** para los casos de validación y permisos (`400`, `401`, `403`, `404`, `409`).
+
+Cada request incluye pruebas sobre el código de estado y la estructura de la respuesta. Los emails de los usuarios de ejemplo usan `{{$timestamp}}`, por lo que la colección se puede ejecutar varias veces sin conflictos.
+
 
 ---
 
