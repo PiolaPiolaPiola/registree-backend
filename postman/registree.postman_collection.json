@@ -224,7 +224,12 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test('Status 200', () => pm.response.to.have.status(200));",
-									"pm.test('Rol ADMIN', () => pm.expect(pm.response.json().role).to.eql('ADMIN'));"
+									"pm.test('Devuelve el usuario sin contraseña', () => {",
+									"  const json = pm.response.json();",
+									"  pm.expect(json.email).to.eql('admin@registree.com');",
+									"  pm.expect(json.role).to.eql('ADMIN');",
+									"  pm.expect(json).to.not.have.property('password');",
+									"});"
 								]
 							}
 						}

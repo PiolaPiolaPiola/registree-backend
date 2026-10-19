@@ -1,5 +1,7 @@
 import {Request, Response} from 'express';
 import * as authService from '../services/auth.service';
+import * as userService from '../services/user.service';
+import { getUserIdAuth } from '../utils/auth-utils';
 import { AppError } from '../utils/app-error';
 
 const isNonEmptyString = (value: unknown): value is string =>
@@ -33,5 +35,6 @@ export const login = async (req: Request, res: Response) => {
 
 /** GET /api/auth/me: devuelve el usuario autenticado (requiere el authenticate) */
 export const me = async (req: Request, res: Response) => {
-  res.status(200).json(req.user);
+  const user = await userService.getUserById(getUserIdAuth(req));
+  res.status(200).json(user);
 };

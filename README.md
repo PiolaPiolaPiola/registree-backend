@@ -100,7 +100,7 @@ Authorization: Bearer <token>
 |---|---|---|---|
 | `POST` | `/api/auth/register` | Registra un usuario | Público |
 | `POST` | `/api/auth/login` | Valida credenciales y devuelve el token | Público |
-| `GET` | `/api/auth/me` | Devuelve el usuario autenticado | Requiere token |
+| `GET` | `/api/auth/me` | Devuelve el usuario autenticado y su información | Requiere token |
 
 Ejemplo de body para registro:
 ```json
