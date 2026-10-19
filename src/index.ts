@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import {env} from './config/env';
 import {connectDB} from './config/database';
 import authRoutes from './routes/auth.routes';
+import productRoutes from './routes/product.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { notFound } from './middlewares/not-found.middleware';
 
@@ -12,6 +13,7 @@ const app = express();
 app.use(cors({origin: env.corsOrigin}));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 
 app.get('/api/health', (_req, res) => {
     const dbConnected = mongoose.connection.readyState === 1;

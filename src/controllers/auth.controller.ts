@@ -18,7 +18,7 @@ export const register = async (req: Request, res: Response) => {
     res.status(201).json(result);
 }
 
-/** POST /api/auth/login: valida las credenciales y devuelve el usuario y su token */
+/** POST /api/auth/login: valida las credenciales para ingresar y devuelve el usuario y su token */
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body ?? {};
 
