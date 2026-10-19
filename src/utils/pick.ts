@@ -1,4 +1,4 @@
-/**Evita que en el reuqest el cliente manipule campos internos*/
+/**Evita que en el request el cliente manipule campos no permitidos*/
 export const pick = <K extends string>(source: unknown, keys: readonly K[]): Partial<Record<K, unknown>> => {
     if(typeof source !== 'object' || source === null) return{};
 
