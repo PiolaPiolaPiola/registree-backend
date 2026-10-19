@@ -9,11 +9,12 @@ const required = (name: string): string => {
     return value;
 };
 
-/**Se aplica la validación de required() a las variables de entorno */
+/**Se controla que las variables de entorno tengan valor */
 export const env = {
     port: Number(process.env.PORT) || 3000,
     mongoUri: required('MONGO_URI'),
     jwtSecret: required('JWT_SECRET'),
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
-    
+    corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    bcryptSaltRounds: Number(process.env.BCRYPT_SALT_ROUNDS) || 10
 };

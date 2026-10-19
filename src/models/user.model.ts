@@ -1,4 +1,6 @@
 import { Schema, model } from "mongoose";
+import bcrypt from 'bcrypt';
+import { env } from '../config/env'
 
 /**Únicos roles permitidos para login y permisos */
 export enum UserRole {
@@ -34,6 +36,8 @@ const userSchema = new Schema<IUser>(
     password: {
       type: String,
       required: [true, "La contraseña es obligatoria"],
+      //Se valida antes del hash. También se hace en el front
+      minlength: [8, "La contraseña debe tener mínimo 8 caracteres"],
       select: false,
     },
     role: {
@@ -69,6 +73,13 @@ userSchema.set("toJSON", {
     const { password, ...rest } = ret; //Para no exponer la contraseña en la respuesta
     return rest;
   },
+});
+
+/** Se hashea la contraseña antes de guardar, solo si es nueva o fue modificada */
+userSchema.pre('save', async function(){
+    if (!this.isModified('password'))
+        return;
+    this.password = await bcrypt.hash(this.password, env.bcryptSaltRounds);
 });
 
 export const User = model<IUser>("User", userSchema);
