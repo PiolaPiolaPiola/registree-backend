@@ -2,6 +2,8 @@
 
 API REST desarrollada con **Node.js**, **TypeScript**, **Express** y **MongoDB** para la gestión de inventario y dashboard gerencial de la plataforma *Registree*.
 
+* Frontend (React + MUI): [registree-frontend](https://github.com/PiolaPiolaPiola/registree-frontend).
+
 * La API queda disponible en `http://localhost:3000/api`. Para verificar que está funcionando y conectada a la bd:
   `GET http://localhost:3000/api/health` → `{ "status": "Ok", "database_connected": true }`
 ---
