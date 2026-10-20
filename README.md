@@ -60,7 +60,7 @@ docker compose up -d
 > docker compose up -d #levanta la bd
 > ```
 
-* Crear los usuarios de prueba (ver [Credenciales de prueba](#credenciales-de-prueba)):
+* Crear los usuarios y productos de prueba (ver [Credenciales de prueba](#credenciales-de-prueba)):
 ```bash
 npm run seed
 ```
@@ -77,7 +77,7 @@ npm start #modo producción para ejecutar
 
 ## Credenciales de prueba
 
-El comando `npm run seed` crea un usuario para cada rol. Se puede ejecutar varias veces: si el usuario ya existe, no lo duplica.
+El comando `npm run seed` crea un usuario para cada rol y 12 productos de prueba (con fechas de creación repartidas en los últimos 28 días, productos agotados, con poco stock, sin imagen, con varias imágenes y con una URL de imagen que no carga, para ver la imagen por defecto). Se puede ejecutar varias veces: si el usuario o el producto ya existe, no lo duplica. Si un producto de prueba se eliminó desde la app, el seed sí lo vuelve a crear.
 
 | Rol | Email | Contraseña | Permisos |
 |---|---|---|---|
@@ -121,7 +121,7 @@ Ejemplo de body para login:
 
 **Decisiones de seguridad:**
 * Las contraseñas se guardan hasheadas con bcrypt y nunca se devuelven en las respuestas.
-* El registro público siempre crea usuarios con rol `USER`; los `ADMIN` se crean con el seed.
+* El registro público siempre crea usuarios con rol `USER`; los `ADMIN` se crean con el seed o desde usuarios, pero con el permiso.
 * El login responde el mismo error si el email no existe o la contraseña es incorrecta, para no revelar información de más.
 * Solo usuarios activos pueden ingresar.
 * CORS solo acepta peticiones desde la URL configurada en `CORS_ORIGIN`.
